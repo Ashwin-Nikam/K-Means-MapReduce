@@ -21,7 +21,7 @@ public class Kmeans {
     public static int numberOfClusters;
     public static ArrayList<ArrayList<Double>> centroidList = new ArrayList<>();
     public static ArrayList<Integer> mainList = new ArrayList<>();
-    public  static ArrayList<Integer> trueValues = new ArrayList<>();
+    public static ArrayList<Integer> trueValues = new ArrayList<>();
 
     public static void readFile(String filePath) throws IOException {
         BufferedReader bufferedReader = new BufferedReader(
@@ -33,21 +33,21 @@ public class Kmeans {
             for (int i = 2; i < array.length; i++) {
                 list.add(Double.parseDouble(array[i]));
             }
-            matrix.add(list);                               //Matrix contains points at each row
+            matrix.add(list);     //Matrix contains points at each row
             mainList.add(-1);
             trueValues.add(Integer.parseInt(array[1]));
         }
 
         Random random = new Random();
-//        numberOfClusters = 5;
-//        while(centroidList.size()<numberOfClusters) {                     //Centroid list contains the centroids
-//            int randomInt = random.nextInt(matrix.size());
-//            if(!centroidList.contains(matrix.get(randomInt)))
-//                centroidList.add(matrix.get(randomInt));
-//        }
-        for(int i=0; i<10; i++) {
-            centroidList.add(matrix.get(i));
+        numberOfClusters = 5;
+        while(centroidList.size()<numberOfClusters) {    //Centroid list contains the centroids
+            int randomInt = random.nextInt(matrix.size());
+            if(!centroidList.contains(matrix.get(randomInt)))
+                centroidList.add(matrix.get(randomInt));
         }
+//        for(int i=0; i<10; i++) {
+//            centroidList.add(matrix.get(i));
+//        }
 
     }
 
@@ -76,10 +76,9 @@ public class Kmeans {
                 }
 
             }
-            System.out.println("Mapper output "+pointInt + " "+ finalCentroid);
             IntWritable pointId = new IntWritable(pointInt);
             IntWritable clusterId = new IntWritable(finalCentroid);
-            context.write(clusterId, pointId);          //We're returning centroid index and the index of the point associated with that centroid
+            context.write(clusterId, pointId);  //We're returning centroid index and the index of the point associated with that centroid
         }
     }
 
@@ -106,8 +105,6 @@ public class Kmeans {
             }
             centroidList.set(clusterId, newCentroid);
             IntWritable numPointsAssignedToCluster = new IntWritable(count);
-            System.out.println("Updated centroid list");
-            System.out.println(centroidList);
             context.write(key, numPointsAssignedToCluster);
         }
     }
@@ -141,10 +138,10 @@ public class Kmeans {
             if(count == 0)
                 break;
         }
-        calculateEfficency();
+        calculateEfficiency();
     }
 
-    public static void calculateEfficency() {
+    public static void calculateEfficiency() {
         int[][] groundTruth = new int[matrix.size()][matrix.size()];
         int[][] clusterTruth = new int[matrix.size()][matrix.size()];
         for(int i=0; i<matrix.size(); i++) {
@@ -157,7 +154,6 @@ public class Kmeans {
                     groundTruth[i][j] = 0;
                     groundTruth[j][i] = 0;
                 }
-
                 if(mainList.get(i) == mainList.get(j)) {
                     clusterTruth[i][j] = 1;
                     clusterTruth[j][i] = 1;
@@ -165,7 +161,6 @@ public class Kmeans {
                     clusterTruth[i][j] = 0;
                     clusterTruth[j][i] = 0;
                 }
-
             }
         }
 
@@ -189,7 +184,5 @@ public class Kmeans {
         jCoeff = (m11)/(m11 + m01 + m10);
         System.out.println("Rand: "+randIndex+" ");
         System.out.println("Jaccard Coefficient: "+jCoeff);
-
     }
-
 }

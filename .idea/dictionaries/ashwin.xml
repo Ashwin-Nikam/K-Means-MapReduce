@@ -3,6 +3,7 @@
     <words>
       <w>coeff</w>
       <w>jaccard</w>
+      <w>kmeans</w>
     </words>
   </dictionary>
 </component>

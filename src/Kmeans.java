@@ -9,9 +9,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -20,11 +18,10 @@ import java.util.Random;
 public class Kmeans {
 
     final public static ArrayList<ArrayList<Double>> matrix = new ArrayList<>(); //Matrix of all the data-points
-    public static int numberOfClusters;
     public static ArrayList<ArrayList<Double>> centroidList = new ArrayList<>();   //List containing the centroids
     public static ArrayList<Integer> mainList = new ArrayList<>();   //List containing clusterId assigned to each data point
     public static ArrayList<Integer> trueValues = new ArrayList<>();    //List containing ground truth of each data point
-
+    public static int numberOfClusters = 5;
     /*
     The method readFile() populates the matrix with data points.
     It also initializes mainList with -1 and fills up the trueValues list.
@@ -34,7 +31,7 @@ public class Kmeans {
 
     public static void readFile(String filePath) throws IOException {
         BufferedReader bufferedReader = new BufferedReader(
-                new FileReader(filePath));
+                new FileReader(filePath)                                                                                                                                                                                                                                );
         String line;
         while ((line = bufferedReader.readLine()) != null) {
             String[] array = line.split("\t");
@@ -47,19 +44,13 @@ public class Kmeans {
             trueValues.add(Integer.parseInt(array[1]));
         }
 
-//        Random random = new Random();
-//        numberOfClusters = 5;
-//        while(centroidList.size()<numberOfClusters) {    //Centroid list contains the centroids
-//            int randomInt = random.nextInt(matrix.size());
-//            if(!centroidList.contains(matrix.get(randomInt)))
-//                centroidList.add(matrix.get(randomInt));
-//        }
+        Random random = new Random();
+        while(centroidList.size()<numberOfClusters) {    //Centroid list contains the centroids
+            int randomInt = random.nextInt(matrix.size());
+            if(!centroidList.contains(matrix.get(randomInt)))
+                centroidList.add(matrix.get(randomInt));
+        }
 
-        centroidList.add(matrix.get(5));
-        centroidList.add(matrix.get(25));
-        centroidList.add(matrix.get(32));
-        centroidList.add(matrix.get(100));
-        centroidList.add(matrix.get(132));
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -97,7 +88,7 @@ public class Kmeans {
 
     //------------------------------------------------------------------------------------------------------------------
 
-    public static class ReducerClass extends Reducer<IntWritable, IntWritable, IntWritable, IntWritable> {
+    public static class ReducerClass extends Reducer<IntWritable, IntWritable, IntWritable, Text> {
         @Override
         protected void reduce(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
             int clusterId = key.get();
@@ -119,8 +110,11 @@ public class Kmeans {
                 newCentroid.add(sum);
             }
             centroidList.set(clusterId, newCentroid); //Replace old centroid with new centroid in centroidList
-            IntWritable numPointsAssignedToCluster = new IntWritable(count);
-            context.write(key, numPointsAssignedToCluster);
+            String newString = "[ ";
+            for(int i=0; i<newCentroid.size(); i++) {
+                newString += newCentroid.get(i) + " ";
+            }newString+="]";
+            context.write(key, new Text(newString));
         }
     }
 
@@ -132,7 +126,7 @@ public class Kmeans {
         Path inPath = new Path(args[0]);
         Path outPath =  null;
         int j = 1;
-        while (true){
+        while (true) {
             outPath = new Path("/home/ashwin/output/"+args[1]+j);
             j++;
             Job job = new Job(conf, "word count");
@@ -142,15 +136,16 @@ public class Kmeans {
             job.setMapOutputKeyClass(IntWritable.class);
             job.setMapOutputValueClass(IntWritable.class);
             job.setOutputKeyClass(IntWritable.class);
-            job.setOutputValueClass(IntWritable.class);
+            job.setOutputValueClass(Text.class);
             FileInputFormat.addInputPath(job, inPath);
             FileOutputFormat.setOutputPath(job, outPath);
             ArrayList tempList = new ArrayList(mainList);
             job.waitForCompletion(true);
-            if(tempList.equals(mainList)) //Iterations carry on until no points move from one cluster to another
+            if(tempList.equals(mainList))     //Iterations carry on until no points move from one cluster to another
                 break;
         }
         calculateEfficiency();
+        inputToPCA();
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -198,6 +193,22 @@ public class Kmeans {
         jCoeff = (m11)/(m11 + m01 + m10);
         System.out.println("Rand: "+randIndex+" ");
         System.out.println("Jaccard Coefficient: "+jCoeff);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+
+    public static void inputToPCA() throws Exception {
+        PrintWriter pw1=new PrintWriter(new FileWriter("/home/ashwin/clusteringresult.txt"));
+        for(int i=0;i<matrix.size();i++) {
+            pw1.write(String.valueOf(mainList.get(i)));
+            for(int j=0;j<matrix.get(i).size();j++) {
+                pw1.write("	");
+                pw1.write(String.valueOf(matrix.get(i).get(j)));
+            }
+            pw1.write("\n");
+        }
+        pw1.flush();
+        pw1.close();
     }
 }
 

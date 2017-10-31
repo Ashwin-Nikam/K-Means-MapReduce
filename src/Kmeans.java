@@ -11,6 +11,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -146,6 +148,7 @@ public class Kmeans {
         }
         calculateEfficiency();
         inputToPCA();
+        printClusters();
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -209,6 +212,27 @@ public class Kmeans {
         }
         pw1.flush();
         pw1.close();
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+
+    public static void printClusters() {
+        HashMap<Integer, ArrayList<Integer>> map = new HashMap<>();
+        for(int i=0; i<mainList.size(); i++) {
+            if(map.containsKey(mainList.get(i))) {
+                ArrayList<Integer> temp = new ArrayList<>(map.get(mainList.get(i)));
+                temp.add(i);
+                map.put(mainList.get(i), temp);
+            } else {
+                ArrayList<Integer> temp = new ArrayList<>();
+                temp.add(i);
+                map.put(mainList.get(i), temp);
+            }
+        }
+        for(Map.Entry<Integer, ArrayList<Integer>> entry: map.entrySet()) {
+            System.out.println();
+            System.out.println("Cluster "+entry.getKey()+":"+entry.getValue());
+        }
     }
 }
 
